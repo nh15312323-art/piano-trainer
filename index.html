@@ -144,6 +144,10 @@ input[type=number]{width:84px;min-height:44px;background:var(--panel2);color:var
           <input type="range" id="kbPct" min="50" max="110" step="5" value="100" aria-label="건반 크기 퍼센트"></div>
         <div class="field"><span class="lbl">건반 세로 위치 <b id="kbYV" style="color:var(--accent)">50%</b></span>
           <input type="range" id="kbY" min="0" max="60" step="1" value="50" aria-label="건반 중심의 세로 위치 퍼센트, 50이면 화면 중앙"></div>
+        <div class="field"><span class="lbl">건반 길이 <b id="kbLenV" style="color:var(--accent)">130%</b></span>
+          <input type="range" id="kbLen" min="60" max="180" step="5" value="130" aria-label="건반 세로 길이 퍼센트"></div>
+        <div class="field"><span class="lbl">악보 크기 <b id="sheetSzV" style="color:var(--accent)">130%</b></span>
+          <input type="range" id="sheetSz" min="80" max="200" step="5" value="130" aria-label="악보 크기 퍼센트"></div>
       </div>
       <p class="hintline">화면 인치를 맞추면 건반 폭이 실제 피아노(약 23.5mm)에 가깝게 그려집니다. 곡 음역이 화면보다 넓으면 자동으로 좁아집니다.</p>
       <div class="row" style="display:none"></div>
@@ -235,7 +239,7 @@ const STAGES=[
 ];
 
 /* ---------- 설정 ---------- */
-const S=Object.assign({mode:'fall',hand:'rh',tempo:100,sens:5,lat:120,oct:true,hint:true,names:true,sfx:false,stage:1,diag:11,kbPct:100,kbY:50},LS.get('pt.settings',{}));
+const S=Object.assign({mode:'fall',hand:'rh',tempo:100,sens:5,lat:120,oct:true,hint:true,names:true,sfx:false,stage:1,diag:11,kbPct:100,kbY:50,kbLen:130,sheetSz:130},LS.get('pt.settings',{}));
 const saveS=()=>LS.set('pt.settings',S);
 const best=LS.get('pt.best',{});
 const pickPart=song=>song.parts[S.hand]?S.hand:Object.keys(song.parts)[0];
@@ -353,10 +357,11 @@ function geo(W){
   return {lo,hi,keys,by,ww};
 }
 function applyKbH(){
-  const h=Math.round(Math.max(110,Math.min(innerHeight*.36,keyPx().ppm*85)));
+  const h=Math.round(Math.min(innerHeight*.5,Math.max(110,Math.min(innerHeight*.36,keyPx().ppm*85))*S.kbLen/100));
   $('#kb').style.height=h+'px';
   const H=$('#app').clientHeight||innerHeight;
-  $('#game').style.paddingBottom=Math.max(0,Math.round(H*S.kbY/100-h/2))+'px';
+  const maxPad=H-h-Math.max(170,H*.38)-70;
+  $('#game').style.paddingBottom=Math.max(0,Math.round(Math.min(H*S.kbY/100-h/2,maxPad)))+'px';
 }
 const pressed={};
 function setRange(notes){
@@ -558,7 +563,7 @@ function pagesFor(w,sp){
   return pages;
 }
 function drawSheet(c,w,h){
-  const sp=Math.min(16,h/18), left=Math.max(52,sp*4), right=w-14, base=run.clef==='treble'?30:18;
+  const sp=Math.min(16*S.sheetSz/100,h/14), left=Math.max(52,sp*4), right=w-14, base=run.clef==='treble'?30:18;
   const yB=h*.4+2*sp, ys=st=>yB-(st-base)*sp/2;
   if(run.pagesW!==w||run.pagesSp!==sp){run.pages=pagesFor(w,sp);run.pagesW=w;run.pagesSp=sp;}
   const cn=run.notes[Math.min(run.idx,run.notes.length-1)];
@@ -640,6 +645,8 @@ $('#lat').value=S.lat;$('#latV').textContent=S.lat+'ms';$('#lat').oninput=e=>{S.
 $('#diag').value=S.diag;$('#diag').onchange=e=>{const v=parseFloat(e.target.value);S.diag=(v>=5&&v<=20)?v:11;e.target.value=S.diag;saveS();applyKbH();};
 $('#kbPct').value=S.kbPct;$('#kbV').textContent=S.kbPct+'%';$('#kbPct').oninput=e=>{S.kbPct=+e.target.value;$('#kbV').textContent=S.kbPct+'%';saveS();applyKbH();};
 $('#kbY').value=S.kbY;$('#kbYV').textContent=S.kbY+'%';$('#kbY').oninput=e=>{S.kbY=+e.target.value;$('#kbYV').textContent=S.kbY+'%';saveS();applyKbH();};
+$('#kbLen').value=S.kbLen;$('#kbLenV').textContent=S.kbLen+'%';$('#kbLen').oninput=e=>{S.kbLen=+e.target.value;$('#kbLenV').textContent=S.kbLen+'%';saveS();applyKbH();};
+$('#sheetSz').value=S.sheetSz;$('#sheetSzV').textContent=S.sheetSz+'%';$('#sheetSz').oninput=e=>{S.sheetSz=+e.target.value;$('#sheetSzV').textContent=S.sheetSz+'%';saveS();};
 window.addEventListener('resize',applyKbH);
 [['oct','oct'],['hint','hint'],['names','names'],['sfx','sfx']].forEach(([id,k])=>{const el=$('#'+id);el.checked=!!S[k];el.onchange=()=>{S[k]=el.checked;saveS();};});
 $('#micBtn').onclick=()=>Mic.on?stopMic():startMic();
