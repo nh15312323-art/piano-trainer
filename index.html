@@ -142,8 +142,8 @@ input[type=number]{width:84px;min-height:44px;background:var(--panel2);color:var
           <input type="number" id="diag" min="5" max="20" step="0.1" value="11" aria-label="화면 대각선 인치"></div>
         <div class="field"><span class="lbl">건반 크기 <b id="kbV" style="color:var(--accent)">100%</b></span>
           <input type="range" id="kbPct" min="50" max="110" step="5" value="100" aria-label="건반 크기 퍼센트"></div>
-        <div class="field"><span class="lbl">건반 위치 올리기 <b id="liftV" style="color:var(--accent)">8%</b></span>
-          <input type="range" id="lift" min="0" max="30" step="1" value="8" aria-label="건반 아래 여백 퍼센트"></div>
+        <div class="field"><span class="lbl">건반 세로 위치 <b id="kbYV" style="color:var(--accent)">50%</b></span>
+          <input type="range" id="kbY" min="0" max="60" step="1" value="50" aria-label="건반 중심의 세로 위치 퍼센트, 50이면 화면 중앙"></div>
       </div>
       <p class="hintline">화면 인치를 맞추면 건반 폭이 실제 피아노(약 23.5mm)에 가깝게 그려집니다. 곡 음역이 화면보다 넓으면 자동으로 좁아집니다.</p>
       <div class="row" style="display:none"></div>
@@ -235,7 +235,7 @@ const STAGES=[
 ];
 
 /* ---------- 설정 ---------- */
-const S=Object.assign({mode:'fall',hand:'rh',tempo:100,sens:5,lat:120,oct:true,hint:true,names:true,sfx:false,stage:1,diag:11,kbPct:100,lift:8},LS.get('pt.settings',{}));
+const S=Object.assign({mode:'fall',hand:'rh',tempo:100,sens:5,lat:120,oct:true,hint:true,names:true,sfx:false,stage:1,diag:11,kbPct:100,kbY:50},LS.get('pt.settings',{}));
 const saveS=()=>LS.set('pt.settings',S);
 const best=LS.get('pt.best',{});
 const pickPart=song=>song.parts[S.hand]?S.hand:Object.keys(song.parts)[0];
@@ -355,7 +355,8 @@ function geo(W){
 function applyKbH(){
   const h=Math.round(Math.max(110,Math.min(innerHeight*.36,keyPx().ppm*85)));
   $('#kb').style.height=h+'px';
-  $('#game').style.paddingBottom=S.lift+'vh';
+  const H=$('#app').clientHeight||innerHeight;
+  $('#game').style.paddingBottom=Math.max(0,Math.round(H*S.kbY/100-h/2))+'px';
 }
 const pressed={};
 function setRange(notes){
@@ -638,7 +639,7 @@ $('#sens').value=S.sens;$('#sens').oninput=e=>{S.sens=+e.target.value;saveS();};
 $('#lat').value=S.lat;$('#latV').textContent=S.lat+'ms';$('#lat').oninput=e=>{S.lat=+e.target.value;$('#latV').textContent=S.lat+'ms';saveS();};
 $('#diag').value=S.diag;$('#diag').onchange=e=>{const v=parseFloat(e.target.value);S.diag=(v>=5&&v<=20)?v:11;e.target.value=S.diag;saveS();applyKbH();};
 $('#kbPct').value=S.kbPct;$('#kbV').textContent=S.kbPct+'%';$('#kbPct').oninput=e=>{S.kbPct=+e.target.value;$('#kbV').textContent=S.kbPct+'%';saveS();applyKbH();};
-$('#lift').value=S.lift;$('#liftV').textContent=S.lift+'%';$('#lift').oninput=e=>{S.lift=+e.target.value;$('#liftV').textContent=S.lift+'%';saveS();applyKbH();};
+$('#kbY').value=S.kbY;$('#kbYV').textContent=S.kbY+'%';$('#kbY').oninput=e=>{S.kbY=+e.target.value;$('#kbYV').textContent=S.kbY+'%';saveS();applyKbH();};
 window.addEventListener('resize',applyKbH);
 [['oct','oct'],['hint','hint'],['names','names'],['sfx','sfx']].forEach(([id,k])=>{const el=$('#'+id);el.checked=!!S[k];el.onchange=()=>{S[k]=el.checked;saveS();};});
 $('#micBtn').onclick=()=>Mic.on?stopMic():startMic();
